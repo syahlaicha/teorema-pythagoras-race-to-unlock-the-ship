@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race to Unlock the Ship</title>
+<style>
+*{box-sizing:border-box}
+:root{--gold:#ffd166;--cyan:#64dce5;--navy:#071b32}
+body{margin:0;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:12px;color:#fff;font-family:Trebuchet MS,Arial,sans-serif;background:radial-gradient(ellipse at 50% 5%,#1b5877 0%,#0b2b49 48%,#061426 100%);overflow-x:hidden;overflow-y:auto}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:38px 38px}
+.card{position:relative;width:min(720px,100%);max-height:calc(100svh - 24px);overflow-y:auto;padding:clamp(16px,3vh,30px) clamp(18px,4vw,36px);text-align:center;border:1px solid #8ce9ef66;border-radius:24px;background:linear-gradient(145deg,#123d5bdd,#08223beF);box-shadow:0 18px 60px #0008;scrollbar-width:thin;scrollbar-color:#64dce5 #08223b}
+.flag{color:var(--cyan);font-weight:900;letter-spacing:4px;font-size:12px}
+h1{font-size:clamp(36px,7vw,66px);line-height:1;margin:13px 0;color:#fff4d5;text-shadow:0 5px 0 #0005}
+.ship{font-size:clamp(58px,10vw,92px);margin:3px 0 0;filter:drop-shadow(0 12px 10px #0008);animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px) rotate(1deg)}}
+.lead{max-width:540px;margin:0 auto 16px;color:#d1e3ee;font-size:clamp(14px,1.8vw,17px);line-height:1.45}
+.label{display:block;margin:0 0 10px;color:#ffe3a1;font-size:13px;font-weight:900;letter-spacing:2px}
+input{display:block;width:min(360px,100%);margin:0 auto;padding:17px 15px;border:2px solid #ffffff40;border-radius:14px;background:#06182a;color:white;text-align:center;font-size:30px;font-weight:900;letter-spacing:14px;outline:none}
+input:focus{border-color:var(--cyan);box-shadow:0 0 0 4px #64dce522}
+button{width:min(360px,100%);margin-top:15px;padding:16px;border:0;border-radius:14px;background:var(--gold);color:#382608;font-size:17px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 #b17b29;transition:.18s}
+button:hover{transform:translateY(-2px);filter:brightness(1.06)}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.music-control{width:auto;min-width:160px;margin:0 0 18px;padding:10px 16px;font-size:13px;background:#64dce5;color:#08223b;box-shadow:0 4px 0 #268c96}
+#feedback{min-height:54px;margin-top:18px;font-weight:800;line-height:1.45}
+#feedback .feedback-emoji{display:block;font-size:30px;margin-bottom:4px}
+.shake{animation:shake .35s ease}
+.celebrate{animation:celebrate .65s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes celebrate{0%,100%{transform:scale(1)}35%{transform:scale(1.04)}70%{transform:scale(.99)}}
+.music-note{color:#b9eaf0;font-size:12px;margin-top:8px}
+.error{color:#ffaaaa}.success{color:#8cf0bd}
+.result{display:none;margin-top:22px;padding:22px;border:2px solid var(--gold);border-radius:18px;background:linear-gradient(135deg,#65491a,#123b4d);animation:appear .35s ease}
+@keyframes appear{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.result .icon{font-size:48px}.result h2{margin:8px 0;color:var(--gold);font-size:clamp(25px,4vw,36px)}
+.result p{margin:8px 0;line-height:1.6;font-size:17px}
+.footer{margin-top:14px;color:#a7c4d4;font-size:11px;letter-spacing:1.5px}
+
+/* Animasi hasil permainan */
+.game-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:#020b18dd;backdrop-filter:blur(7px)}
+.game-overlay.show{display:flex}
+.overlay-panel{position:relative;width:min(560px,94vw);padding:clamp(28px,5vw,48px) 24px;text-align:center;border:2px solid #ffffff66;border-radius:28px;box-shadow:0 24px 90px #000b;overflow:hidden}
+.overlay-panel.wrong{background:radial-gradient(circle at 50% 0%,#873b48,#301a35 72%);border-color:#ff9c9c;animation:wrongPop .48s cubic-bezier(.2,.9,.25,1.2) both}
+.overlay-panel.win{background:radial-gradient(circle at 50% 0%,#99702a,#16465a 72%);border-color:#ffe18a;animation:winPop .65s cubic-bezier(.15,.9,.2,1.2) both}
+.overlay-emoji{font-size:clamp(76px,15vw,112px);line-height:1.1;filter:drop-shadow(0 8px 12px #0008);animation:emojiBounce .8s ease-in-out infinite alternate}
+.overlay-title{margin:12px 0 8px;font-size:clamp(30px,6vw,52px);line-height:1.05;font-weight:1000;color:#fff4d5;text-shadow:0 4px 0 #0005}
+.overlay-copy{margin:0 auto 20px;max-width:420px;color:#fff;font-size:clamp(16px,2.5vw,20px);line-height:1.5}
+.overlay-action{width:min(280px,100%);margin:0;padding:14px 20px;border-radius:14px;background:#ffe08a;color:#382608;font-weight:1000}
+.overlay-panel.wrong .overlay-action{background:#ffd0d0;color:#511e2b}
+@keyframes wrongPop{0%{opacity:0;transform:translateY(35px) scale(.55) rotate(-5deg)}65%{transform:translateY(-5px) scale(1.04) rotate(1deg)}100%{opacity:1;transform:scale(1)}}
+@keyframes winPop{0%{opacity:0;transform:scale(.35) rotate(-8deg)}65%{transform:scale(1.07) rotate(2deg)}100%{opacity:1;transform:scale(1)}}
+@keyframes emojiBounce{to{transform:translateY(-12px) rotate(5deg)}}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.star-celebration{display:flex;justify-content:center;align-items:center;gap:clamp(4px,2vw,14px);margin:18px auto 8px;min-height:clamp(48px,10vw,78px)}
+.celebration-star{display:inline-block;color:#ffd700;font-size:clamp(38px,8vw,64px);line-height:1;opacity:0;filter:drop-shadow(0 0 10px #ffdf55);transform:scale(.2) rotate(-25deg)}
+.celebration-star.show{animation:starWiggle .65s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes starWiggle{0%{opacity:0;transform:scale(.2) rotate(-25deg)}45%{opacity:1;transform:scale(1.25) rotate(18deg)}65%{transform:scale(.92) rotate(-12deg)}80%{transform:scale(1.12) rotate(9deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+#overlayTitle.finished{font-size:clamp(28px,5.5vw,48px)}
+@media(prefers-reduced-motion:reduce){.celebration-star.show{animation:none!important;opacity:1;transform:none}}
+.confetti i{position:absolute;top:-15%;left:var(--x);width:10px;height:18px;background:var(--c);border-radius:2px;transform:rotate(var(--r));animation:confettiFall var(--t) linear var(--d) infinite}
+@keyframes confettiFall{to{top:115%;transform:translateX(var(--drift)) rotate(760deg)}}
+@media(prefers-reduced-motion:reduce){.overlay-panel,.overlay-emoji,.confetti i{animation:none!important}}
+
+@media(max-height:760px){body{align-items:flex-start;padding:8px}.card{max-height:calc(100svh - 16px);padding:12px 20px}.flag{font-size:10px}h1{font-size:clamp(30px,5vw,46px);margin:7px 0}.ship{font-size:58px;margin:0}.lead{margin-bottom:10px;font-size:14px}.music-control{margin-bottom:8px}#feedback{min-height:38px;margin-top:10px}.result{margin-top:12px;padding:14px}.footer{margin-top:8px}}
+@media(max-width:480px){.card{padding:16px 14px}input{font-size:25px}.ship{font-size:60px}}
+</style>
+</head>
+<body>
+
+<div class="game-overlay" id="gameOverlay" role="dialog" aria-modal="true" aria-live="assertive" aria-labelledby="overlayTitle">
+  <div class="overlay-panel" id="overlayPanel">
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+    <div class="overlay-emoji" id="overlayEmoji">🎉</div>    <div class="star-celebration" id="starCelebration" aria-label="Lima bintang emas" aria-live="polite"></div>
+    <div class="overlay-title" id="overlayTitle">MISI SELESAI!</div>
+    <p class="overlay-copy" id="overlayCopy">Kalian berhasil menyelesaikan permainan!</p>
+    <button type="button" class="overlay-action" id="overlayAction">TUTUP</button>
+  </div>
+</div>
+
+<main class="card">
+  <button type="button" class="music-control" id="musicToggle" aria-pressed="false">🎵 AKTIFKAN MUSIK</button>
+  <div class="music-note" id="musicNote">Musik petualangan akan diputar setelah tombol ditekan.</div>
+  <div class="flag">THE FINAL CHALLENGE</div>
+  <h1>UNLOCK THE SHIP!</h1>
+  <div class="ship">⛵</div>
+  <p class="lead">Seluruh misi telah diselesaikan! Masukkan kode rahasia untuk membuka jawaban akhir dan menyelamatkan kapal.</p>
+
+  <label class="label" for="code">MASUKKAN KODE RAHASIA</label>
+  <input id="code" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" aria-label="Kode rahasia 4 digit">
+  <button id="unlock">🔓 BUKA JAWABAN AKHIR</button>
+  <div id="feedback" aria-live="polite"></div>
+
+  <section class="result" id="result">
+    <div class="icon">🏆⚓</div>
+    <h2>MISI BERHASIL DISELAMATKAN!</h2>
+    <p><strong>Kapal berhasil dibuka!</strong></p>
+    <p id="finalAnswer">Selamat! Kalian berhasil menyelesaikan seluruh tantangan dan menemukan jawaban akhir.</p>
+  </section>
+  <div class="footer">THINK • WORK TOGETHER • NEVER GIVE UP</div>
+</main>
+<script>
+/* GANTI KODE dan JAWABAN AKHIR DI BAGIAN INI */
+const KODE_RAHASIA = "2026";
+const JAWABAN_AKHIR = "Selamat! Kalian berhasil menyelesaikan seluruh tantangan dan menemukan jawaban akhir.";
+
+const input = document.getElementById("code");
+const feedback = document.getElementById("feedback");
+const result = document.getElementById("result");
+const unlockButton = document.getElementById("unlock");
+const musicToggle = document.getElementById("musicToggle");
+const musicNote = document.getElementById("musicNote");
+
+const gameOverlay = document.getElementById("gameOverlay");
+const overlayPanel = document.getElementById("overlayPanel");
+const overlayEmoji = document.getElementById("overlayEmoji");
+const overlayTitle = document.getElementById("overlayTitle");
+const overlayCopy = document.getElementById("overlayCopy");
+const overlayAction = document.getElementById("overlayAction");
+const confetti = document.getElementById("confetti");
+let wrongOverlayTimer = null;
+
+function closeGameOverlay() {
+  gameOverlay.classList.remove("show");
+  if (wrongOverlayTimer) window.clearTimeout(wrongOverlayTimer);
+  wrongOverlayTimer = null;
+}
+function showWrongOverlay() {
+  if (wrongOverlayTimer) window.clearTimeout(wrongOverlayTimer);
+  overlayPanel.className = "overlay-panel wrong";
+  overlayEmoji.textContent = "❌";
+  overlayTitle.textContent = "JAWABAN SALAH!";
+  overlayCopy.textContent = "Belum tepat! Jangan menyerah, periksa lagi jawabannya dan coba sekali lagi.";
+  overlayAction.textContent = "COBA LAGI";
+  confetti.innerHTML = "";
+  gameOverlay.classList.add("show");
+  wrongOverlayTimer = window.setTimeout(closeGameOverlay, 1650);
+}
+function showWinOverlay() {
+  if (wrongOverlayTimer) window.clearTimeout(wrongOverlayTimer);
+  overlayPanel.className = "overlay-panel win";
+  overlayEmoji.textContent = "🏆🎉";
+  overlayTitle.textContent = "FINISHED!";
+  overlayCopy.textContent = "MISI SELESAI! Kalian berhasil membuka jawaban akhir dan menyelamatkan kapal. Klik untuk merayakan kemenangan!";
+  overlayAction.textContent = "RAYAKAN KEMENANGAN";
+  confetti.innerHTML = "";
+  const colors = ["#ffe08a", "#64dce5", "#ff7b7b", "#a8f0bd", "#ffffff", "#c5a3ff"];
+  for (let i = 0; i < 70; i++) {
+    const piece = document.createElement("i");
+    piece.style.setProperty("--x", (Math.random() * 100) + "%");
+    piece.style.setProperty("--c", colors[i % colors.length]);
+    piece.style.setProperty("--r", (Math.random() * 180) + "deg");
+    piece.style.setProperty("--t", (2.2 + Math.random() * 2.2) + "s");
+    piece.style.setProperty("--d", (Math.random() * 1.8) + "s");
+    piece.style.setProperty("--drift", ((Math.random() - 0.5) * 160) + "px");
+    confetti.appendChild(piece);
+  }
+  gameOverlay.classList.add("show");
+}
+
+
+let audioContext = null;
+let musicTimer = null;
+let musicOn = false;
+let noteIndex = 0;
+let masterGain = null;
+let compressor = null;
+
+// Musik latar dibuat langsung dengan Web Audio API, jadi tidak memerlukan file audio tambahan.
+const melody = [392, 494, 587, 659, 587, 494, 440, 523, 659, 784, 659, 587, 523, 494, 587, 784];
+const bassLine = [196, 147, 165, 175, 196, 147, 131, 165];
+
+function getAudioContext() {
+  if (!audioContext) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    audioContext = new AudioCtx();
+    compressor = audioContext.createDynamicsCompressor();
+    compressor.threshold.setValueAtTime(-18, audioContext.currentTime);
+    compressor.knee.setValueAtTime(18, audioContext.currentTime);
+    compressor.ratio.setValueAtTime(4, audioContext.currentTime);
+    compressor.attack.setValueAtTime(0.02, audioContext.currentTime);
+    compressor.release.setValueAtTime(0.22, audioContext.currentTime);
+    masterGain = audioContext.createGain();
+    masterGain.gain.setValueAtTime(1.0, audioContext.currentTime);
+    compressor.connect(masterGain);
+    masterGain.connect(audioContext.destination);
+  }
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playTone(frequency, duration = 0.18, type = "sine", volume = 0.07, delay = 0) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const startAt = ctx.currentTime + delay;
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+  oscillator.connect(gain);
+  gain.connect(compressor || ctx.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.03);
+}
+
+function startMusic() {
+  getAudioContext();
+  if (!audioContext) {
+    musicNote.textContent = "Browser ini belum mendukung pemutaran musik.";
+    return;
+  }
+  if (musicOn) return;
+  musicOn = true;
+  musicToggle.textContent = "🔇 MATIKAN MUSIK";
+  musicToggle.setAttribute("aria-pressed", "true");
+  musicNote.textContent = "🎶 Musik petualangan sedang diputar";
+  const playNext = () => {
+    if (!musicOn) return;
+    const frequency = melody[noteIndex % melody.length];
+    const bass = bassLine[Math.floor(noteIndex / 2) % bassLine.length];
+    // Melodi utama, harmoni, bass, dan ketukan pendek agar musik terasa lebih hidup.
+    playTone(frequency, 0.30, "triangle", 0.12);
+    playTone(frequency * 1.5, 0.16, "sine", 0.045, 0.07);
+    if (noteIndex % 2 === 0) playTone(bass, 0.48, "sawtooth", 0.085);
+    if (noteIndex % 4 === 0) {
+      playTone(frequency * 2, 0.12, "sine", 0.035, 0.16);
+    }
+    // Ketukan perkusi lembut.
+    playTone(noteIndex % 4 === 0 ? 110 : 82, 0.07, "square", 0.025);
+    noteIndex++;
+  };
+  playNext();
+  musicTimer = window.setInterval(playNext, 240);
+}
+
+function stopMusic() {
+  musicOn = false;
+  if (musicTimer) window.clearInterval(musicTimer);
+  musicTimer = null;
+  musicToggle.textContent = "🎵 AKTIFKAN MUSIK";
+  musicToggle.setAttribute("aria-pressed", "false");
+  musicNote.textContent = "Musik dijeda. Tekan tombol untuk memutar kembali.";
+}
+
+function soundCorrect() {
+  [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38]].forEach(([f, d]) => {
+    playTone(f, 0.22, "sine", 0.09, d);
+  });
+}
+
+function soundWrong() {
+  playTone(220, 0.18, "square", 0.045);
+  playTone(165, 0.28, "square", 0.04, 0.16);
+}
+
+function showFeedback(emoji, message, type) {
+  feedback.className = type;
+  feedback.innerHTML = '<span class="feedback-emoji" aria-hidden="true">' +
+    emoji + '</span><span>' + message + '</span>';
+}
+
+function unlock() {
+  // Interaksi tombol juga menjadi kesempatan memulai audio pada browser yang membatasi autoplay.
+  getAudioContext();
+
+  if (input.value.length !== 4) {
+    showFeedback("🤔", "Masukkan kode yang terdiri dari 4 digit terlebih dahulu.", "error");
+    soundWrong();
+    input.classList.remove("shake");
+    void input.offsetWidth;
+    input.classList.add("shake");
+    result.style.display = "none";
+    return;
+  }
+
+  if (input.value === KODE_RAHASIA) {
+    showFeedback("🎉", "Hebat! Kode benar. Jawaban akhir berhasil dibuka!", "success");
+    soundCorrect();
+    document.getElementById("finalAnswer").textContent = JAWABAN_AKHIR;
+    result.style.display = "block";
+    result.classList.remove("celebrate");
+    void result.offsetWidth;
+    result.classList.add("celebrate");
+    unlockButton.textContent = "🏆 MISI BERHASIL!";
+    unlockButton.disabled = true;
+    input.disabled = true;
+    showWinOverlay();
+  } else {
+    showFeedback("😅", "Ups, kode belum tepat. Jangan menyerah, coba periksa kembali ya!", "error");
+    showWrongOverlay();
+    soundWrong();
+    result.style.display = "none";
+    input.value = "";
+    input.focus();
+    input.classList.remove("shake");
+    void input.offsetWidth;
+    input.classList.add("shake");
+  }
+}
+
+
+let celebrationTimers = [];
+let celebrationAudioTimers = [];
+
+function clearCelebration() {
+  celebrationTimers.forEach(timer => window.clearTimeout(timer));
+  celebrationAudioTimers.forEach(timer => window.clearTimeout(timer));
+  celebrationTimers = [];
+  celebrationAudioTimers = [];
+}
+
+function playVictoryChord(index) {
+  // Nada ceria yang naik mengikuti bintang yang tampil.
+  const notes = [
+    [523, 659, 784],
+    [587, 740, 880],
+    [659, 831, 988],
+    [784, 988, 1175],
+    [1047, 1319, 1568]
+  ];
+  (notes[index] || notes[4]).forEach((frequency, j) => {
+    playTone(frequency, 0.48, "triangle", 0.16, j * 0.045);
+  });
+  playTone([262, 294, 330, 392, 523][index], 0.58, "sine", 0.11);
+}
+
+function startStarCelebration() {
+  clearCelebration();
+  const starBox = document.getElementById("starCelebration");
+  starBox.innerHTML = "";
+  overlayEmoji.style.display = "none";
+  overlayTitle.textContent = "FINISHED!";
+  overlayTitle.classList.remove("finished");
+  overlayCopy.textContent = "Bersiaplah… bintang kemenangan kalian muncul satu per satu!";
+  overlayAction.disabled = true;
+  overlayAction.style.opacity = "0.65";
+
+  for (let i = 0; i < 5; i++) {
+    const star = document.createElement("span");
+    star.className = "celebration-star";
+    star.textContent = "★";
+    star.setAttribute("aria-label", `Bintang ${i + 1}`);
+    starBox.appendChild(star);
+
+    const timer = window.setTimeout(() => {
+      star.classList.add("show");
+      playVictoryChord(i);
+    }, 350 + i * 750);
+    celebrationTimers.push(timer);
+  }
+
+  const finishTimer = window.setTimeout(() => {
+    overlayTitle.textContent = "LIMA BINTANG UNTUK TIM HEBAT!";
+    overlayTitle.classList.add("finished");
+    overlayCopy.textContent = "Lima bintang emas untuk kerja sama, semangat, dan kemenangan kalian!";
+    overlayEmoji.style.display = "block";
+    overlayEmoji.textContent = "🏆🎉";
+    overlayAction.textContent = "TUTUP";
+    overlayAction.disabled = false;
+    overlayAction.style.opacity = "1";
+    // Fanfare penutup yang meriah.
+    [[784, 0], [988, 0.12], [1175, 0.24], [1568, 0.38]].forEach(([f, d]) => {
+      playTone(f, 0.7, "triangle", 0.17, d);
+    });
+  }, 350 + 5 * 750 + 500);
+  celebrationTimers.push(finishTimer);
+}
+
+overlayAction.addEventListener("click", () => {
+  if (overlayPanel.classList.contains("win") && overlayAction.textContent === "RAYAKAN KEMENANGAN") {
+    startStarCelebration();
+    return;
+  }
+  clearCelebration();
+  closeGameOverlay();
+  if (overlayPanel.classList.contains("wrong")) input.focus();
+});
+
+musicToggle.addEventListener("click", () => {
+  if (musicOn) stopMusic();
+  else startMusic();
+});
+
+input.addEventListener("input", () => {
+  input.value = input.value.replace(/\D/g, "").slice(0, 4);
+});
+unlockButton.addEventListener("click", unlock);
+input.addEventListener("keydown", event => {
+  if (event.key === "Enter") unlock();
+});
+
+// Coba mulai otomatis. Jika browser memblokir audio, tombol musik tetap tersedia.
+window.addEventListener("load", () => {
+  const attempt = getAudioContext();
+  if (attempt && attempt.state === "running") startMusic();
+});
+</script>
+</body>
+</html>
